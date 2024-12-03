@@ -176,11 +176,13 @@ class ImageDataset(Dataset):
         return subsets
 
 
-class ImageDataset16_64(Dataset):
+class ImageDataset_8_16_32_64(Dataset):
     def __init__(self, root_dirs, mode='none', gray=True, 
                  store='RAM', extensions='png'):
         super().__init__()
+        self.img8 = list()
         self.img16 = list()
+        self.img32 = list()
         self.img64 = list()
         self.store = store.upper()
         self.gray = gray
@@ -210,7 +212,10 @@ class ImageDataset16_64(Dataset):
                     fptr = fptr.convert('RGB')
                 file_copy = fptr.copy()
                 fptr.close()
+                img8 = transforms.Resize((8,8))(file_copy)
                 img16 = transforms.Resize((16,16))(file_copy)
+                img16 = transforms.Resize((32,32))(file_copy)
+                img16 = transforms.Resize((64,64))(file_copy)
                 self.img16.append(img16)
                 self.img64.append(file_copy)
                 pbar.update(1)
@@ -220,17 +225,26 @@ class ImageDataset16_64(Dataset):
         # self.transform = get_transform(mode)
         self.transform = transforms.Compose([transforms.ToTensor()])
 
-    def set_scale(self, scale):
+        self.scale = 8
+
+    def set_scale(self, scale: int):
         self.scale = scale
 
     def __len__(self):
         return int(len(self.images) * self.repeat)
 
     def __getitem__(self, idx):
-        if self.scale == 16:
-            return self.transform(self.img16[idx // self.repeat])
+        if self.scale == 8:
+            return self.transform(self.img8[idx // self.repeat])
+        elif self.scale == 16:
+            return ( self.transform(self.img8[idx // self.repeat]), 
+                    self.transform(self.img16[idx // self.repeat]) )
+        elif self.scale == 32:
+            return ( self.transform(self.img16[idx // self.repeat]), 
+                    self.transform(self.img32[idx // self.repeat]) )
         elif self.scale == 64:
-            return ( self.transform(self.img16[idx // self.repeat]), self.transform(self.img64[idx // self.repeat]) )
+            return ( self.transform(self.img32[idx // self.repeat]), 
+                     self.transform(self.img64[idx // self.repeat]) )
         else:
             raise RuntimeError()
 
