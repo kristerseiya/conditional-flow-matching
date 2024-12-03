@@ -2,9 +2,10 @@
 import math
 import os
 import time
+import sys
 
 this_dir = os.path.dirname(os.path.realpath(__file__))
-os.chdir(os.path.join(this_dir, '..'))
+sys.path.append(os.path.join(this_dir, '..'))
 
 import matplotlib.pyplot as plt
 import numpy as np
