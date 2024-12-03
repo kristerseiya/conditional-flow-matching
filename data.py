@@ -231,20 +231,20 @@ class ImageDataset_8_16_32_64(Dataset):
         self.scale = scale
 
     def __len__(self):
-        return int(len(self.images) * self.repeat)
+        return int(len(self.img8))
 
     def __getitem__(self, idx):
         if self.scale == 8:
-            return self.transform(self.img8[idx // self.repeat])
+            return self.transform(self.img8[idx])
         elif self.scale == 16:
-            return ( self.transform(self.img8[idx // self.repeat]), 
-                    self.transform(self.img16[idx // self.repeat]) )
+            return ( self.transform(self.img8[idx]), 
+                    self.transform(self.img16[idx]) )
         elif self.scale == 32:
-            return ( self.transform(self.img16[idx // self.repeat]), 
-                    self.transform(self.img32[idx // self.repeat]) )
+            return ( self.transform(self.img16[idx]), 
+                    self.transform(self.img32[idx]) )
         elif self.scale == 64:
-            return ( self.transform(self.img32[idx // self.repeat]), 
-                     self.transform(self.img64[idx // self.repeat]) )
+            return ( self.transform(self.img32[idx]), 
+                     self.transform(self.img64[idx]) )
         else:
             raise RuntimeError()
 
