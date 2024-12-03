@@ -216,7 +216,9 @@ class ImageDataset_8_16_32_64(Dataset):
                 img16 = transforms.Resize((16,16))(file_copy)
                 img16 = transforms.Resize((32,32))(file_copy)
                 img16 = transforms.Resize((64,64))(file_copy)
+                self.img8.append(img8)
                 self.img16.append(img16)
+                self.img32.append(img16)
                 self.img64.append(file_copy)
                 pbar.update(1)
 
