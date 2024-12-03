@@ -176,6 +176,82 @@ class ImageDataset(Dataset):
         return subsets
 
 
+class ImageDataset16_64(Dataset):
+    def __init__(self, root_dirs, mode='none', gray=True, 
+                 store='RAM', extensions='png'):
+        super().__init__()
+        self.img16 = list()
+        self.img64 = list()
+        self.store = store.upper()
+        self.gray = gray
+
+        if type(extensions) != list:
+            extensions = [extensions]
+
+        if type(root_dirs) != list:
+            root_dirs = [root_dirs]
+
+        file_paths = list()
+        for root_dir in root_dirs:
+            for ext in extensions:
+                file_paths += glob.glob(os.path.join(root_dir, '*.'+ext))
+        n_files = len(file_paths)
+
+        if self.store == 'DISK':
+            raise NotImplementedError()
+        elif self.store == 'RAM':
+            pbar = tqdm(total=n_files, position=0, leave=False, file=sys.stdout)
+
+            for file_path in file_paths:
+                fptr = Image.open(file_path)
+                if self.gray:
+                    fptr = fptr.convert('L')
+                else:
+                    fptr = fptr.convert('RGB')
+                file_copy = fptr.copy()
+                fptr.close()
+                img16 = transforms.Resize((16,16))(file_copy)
+                self.img16.append(img16)
+                self.img64.append(file_copy)
+                pbar.update(1)
+
+            tqdm.close(pbar)
+
+        # self.transform = get_transform(mode)
+        self.transform = transforms.Compose([transforms.ToTensor()])
+
+    def set_scale(self, scale):
+        self.scale = scale
+
+    def __len__(self):
+        return int(len(self.images) * self.repeat)
+
+    def __getitem__(self, idx):
+        if self.scale == 16:
+            return self.transform(self.img16[idx // self.repeat])
+        elif self.scale == 64:
+            return ( self.transform(self.img16[idx // self.repeat]), self.transform(self.img64[idx // self.repeat]) )
+        else:
+            raise RuntimeError()
+
+    def split(self, *r):
+        ratios = np.array(r)
+        ratios = ratios / ratios.sum()
+        total_num = len(self.images)
+        indices = np.arange(total_num)
+        np.random.shuffle(indices)
+
+        subsets = list()
+        start = 0
+        for r in ratios[:-1]:
+            split = int(total_num * r)
+            subsets.append(ImageDataSubset(self, indices[start:start+split]))
+            start = start + split
+        subsets.append(ImageDataSubset(self, indices[start:]))
+
+        return subsets
+
+
 # def get_gauss2d(h, w, sigma):
 #     gauss_1d_w = np.array([np.exp(-(x-w//2)**2/float(2**sigma**2)) for x in range(w)])
 #     gauss_1d_w = gauss_1d_w / gauss_1d_w.sum()
